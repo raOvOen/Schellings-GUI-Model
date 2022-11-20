@@ -215,7 +215,7 @@ def on_closing():
 
 if __name__ == '__main__':
     root = tk.Tk()
-    root.title("Schelling model by IvanovA.G.")
+    root.title("Schelling model by raOvOen")
     root.resizable(width=False, height=False)
     window_width = 720
     window_height = 550
