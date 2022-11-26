@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 from tkVideoPlayer import TkinterVideo
 from threading import Thread
 from os import listdir, remove, path, mkdir
-from random import shuffle, choice
+from random import shuffle, choice, sample
 from datetime import datetime
 from imageio import get_writer, imread_v2
 from PIL import Image, ImageDraw
@@ -52,59 +52,69 @@ def gen_canvas():
     while(len(value_list)<size):
         value_list.append("green")
     shuffle(value_list)
-    value_dict = {}
-    for i in range(0, len(value_list)):
-        if value_list[i] not in value_dict.keys():
-            value_dict[value_list[i]] = [i]
-        else:
-            value_dict[value_list[i]].append(i)
-    return value_dict
+    green_list = [cur_index for cur_index in range(len(value_list)) if value_list[cur_index] == "green"]
+    unhappy_set = set()
+    for i in range(len(value_list)):
+        if(value_list[i]=="green"):
+            continue
+        if(not check_if_happy(i, value_list)):
+            unhappy_set.add(i)
+    return value_list, green_list, unhappy_set
+
+def get_neighbors(cell_index):
+    if(cell_index == 0): #left bottom corner
+        neighbors_list = [cell_index + input_size, cell_index + input_size + 1, cell_index + 1]
+    elif(cell_index == input_size*input_size-input_size): #left upper corner
+        neighbors_list = [cell_index + 1, cell_index - input_size, cell_index - input_size + 1]
+    elif(cell_index == input_size*input_size-1): #right upper corner
+        neighbors_list = [cell_index - 1, cell_index - input_size - 1, cell_index - input_size]
+    elif(cell_index == input_size - 1): #right bottom corner
+        neighbors_list = [cell_index + input_size - 1, cell_index + input_size, cell_index - 1]
+    elif(cell_index%input_size == 0): #left wall
+        neighbors_list = [cell_index + input_size, cell_index + input_size + 1, cell_index + 1, cell_index - input_size, cell_index - input_size + 1]
+    elif((cell_index+1)%input_size == 0): #right wall
+        neighbors_list = [cell_index + input_size - 1, cell_index + input_size, cell_index - 1, cell_index - input_size - 1, cell_index - input_size]
+    elif(cell_index < input_size): #bottom wall
+        neighbors_list = [cell_index + input_size - 1, cell_index + input_size, cell_index + input_size + 1, cell_index - 1, cell_index + 1]
+    elif(cell_index > input_size*input_size-input_size): #upper wall
+        neighbors_list = [cell_index - 1, cell_index + 1, cell_index - input_size - 1, cell_index - input_size, cell_index - input_size + 1]
+    else:
+        neighbors_list = [cell_index+input_size-1, cell_index+input_size, cell_index+input_size+1, cell_index-1, cell_index+1, cell_index-input_size-1, cell_index-input_size, cell_index-input_size+1]
+    return neighbors_list
 
 def check_if_happy(cell_index, index_list):
-    if(cell_index == 0): #left bottom corner
-        neighbors_set = {cell_index + input_size, cell_index + input_size + 1, cell_index + 1}
-    elif(cell_index == input_size*input_size-input_size): #left upper corner
-        neighbors_set = {cell_index + 1, cell_index - input_size, cell_index - input_size + 1}
-    elif(cell_index == input_size*input_size-1): #right upper corner
-        neighbors_set = {cell_index - 1, cell_index - input_size - 1, cell_index - input_size}
-    elif(cell_index == input_size - 1): #right bottom corner
-        neighbors_set = {cell_index + input_size - 1, cell_index + input_size, cell_index - 1}
-    elif(cell_index%input_size == 0): #left wall
-        neighbors_set = {cell_index + input_size, cell_index + input_size + 1, cell_index + 1, cell_index - input_size, cell_index - input_size + 1}
-    elif((cell_index+1)%input_size == 0): #right wall
-        neighbors_set = {cell_index + input_size - 1, cell_index + input_size, cell_index - 1, cell_index - input_size - 1, cell_index - input_size}
-    elif(cell_index < input_size): #bottom wall
-        neighbors_set = {cell_index + input_size - 1, cell_index + input_size, cell_index + input_size + 1, cell_index - 1, cell_index + 1}
-    elif(cell_index > input_size*input_size-input_size): #upper wall
-        neighbors_set = {cell_index - 1, cell_index + 1, cell_index - input_size - 1, cell_index - input_size, cell_index - input_size + 1}
-    else:
-        neighbors_set = {cell_index+input_size-1, cell_index+input_size, cell_index+input_size+1, cell_index-1, cell_index+1, cell_index-input_size-1, cell_index-input_size, cell_index-input_size+1}
-    if(len(neighbors_set.intersection(index_list)) >= input_extra_neighbors_to_be_happy_amount):
+    same_colour_neighbors = 0
+    for temp_index in get_neighbors(cell_index):
+        if(index_list[temp_index] == index_list[cell_index]):
+            same_colour_neighbors +=1
+    if(same_colour_neighbors >= input_extra_neighbors_to_be_happy_amount):
         return True
     else:
         return False
 
-def shilling_sim(skip_steps, cur_value_dict):
+def shilling_sim(skip_steps, cur_value_list, cur_green_list, cur_unhappy_set):
     progress_bar_task_status["maximum"] = skip_steps
     for i in range(skip_steps):
-        cur_empty_cell_index = choice(cur_value_dict["green"])
-        happy = True
-        counter = 0
-        while (happy):
-            cur_color = choice([*cur_value_dict])
-            cur_color_cell_index = choice(cur_value_dict[cur_color])
-            happy = check_if_happy(cur_color_cell_index, cur_value_dict[cur_color])
-            if(counter>input_extra_switch_tries):
-                return cur_value_dict
+        cur_empty_cell_index = choice(cur_green_list)
+        cur_color_cell_index = int(sample(cur_unhappy_set, 1)[0])
+        cur_green_list.remove(cur_empty_cell_index)
+        cur_green_list.append(cur_color_cell_index)
+        cur_value_list[cur_empty_cell_index] = cur_value_list[cur_color_cell_index]
+        cur_value_list[cur_color_cell_index] = "green"
+        cells_to_check_list = get_neighbors(cur_color_cell_index)
+        cells_to_check_list.extend(get_neighbors(cur_empty_cell_index))
+        cells_to_check_list.append(cur_empty_cell_index)
+        cur_unhappy_set.remove(cur_color_cell_index)
+        for cur_cell_to_check in cells_to_check_list:
+            if(cur_value_list[cur_cell_to_check]=="green"):
+                continue
+            if(check_if_happy(cur_cell_to_check, cur_value_list)):
+                cur_unhappy_set.discard(cur_cell_to_check)
             else:
-                counter+=1
-        cur_value_dict["green"].remove(cur_empty_cell_index)
-        cur_value_dict["green"].append(cur_color_cell_index)
-        cur_value_dict[cur_color].remove(cur_color_cell_index)
-        cur_value_dict[cur_color].append(cur_empty_cell_index)
+                cur_unhappy_set.add(cur_cell_to_check)
         progress_bar_task_status["value"] +=1
     progress_bar_task_status.stop()
-    return cur_value_dict
+    return cur_value_list, cur_green_list, cur_unhappy_set
 
 def start_prog():
     global input_size
@@ -147,7 +157,7 @@ def gif_start_gen():
     global stop_work
     stop_work = False
     total_frame_amount = input_frames_per_sec*input_time_length
-    main_value_dict = gen_canvas()
+    main_value_list, main_green_list, main_unhappy_set = gen_canvas()
     if (not input_extra_check_use_ROM):
         all_frames = []
     for i in range(total_frame_amount):
@@ -155,10 +165,9 @@ def gif_start_gen():
         draw = ImageDraw.Draw(image)
         draw.rectangle([0, 0, input_extra_pict_size, input_extra_pict_size], fill = (0,0,0))
         if(i!=0):
-            main_value_dict = shilling_sim(input_skip_steps,main_value_dict)
-        for cur_color in main_value_dict.keys():
-            for cur_pos in main_value_dict[cur_color]:
-                draw.rectangle([cur_pos % input_size * input_extra_pict_size/input_size, int(cur_pos / input_size) * input_extra_pict_size/input_size, (cur_pos % input_size + 1) * input_extra_pict_size/input_size, (int(cur_pos / input_size) + 1) * input_extra_pict_size/input_size], fill=cur_color)
+            main_value_list, main_green_list, main_unhappy_set = shilling_sim(input_skip_steps,main_value_list,main_green_list, main_unhappy_set)
+        for cur_pos in range(len(main_value_list)):
+            draw.rectangle([cur_pos % input_size * input_extra_pict_size/input_size, int(cur_pos / input_size) * input_extra_pict_size/input_size, (cur_pos % input_size + 1) * input_extra_pict_size/input_size, (int(cur_pos / input_size) + 1) * input_extra_pict_size/input_size], fill=main_value_list[cur_pos])
         progress_bar_status["value"] +=1
         if(not input_extra_check_use_ROM):
             all_frames.append(image)
@@ -185,6 +194,7 @@ def gif_start_gen():
 def clean_dir():
     for f in listdir("temp_results/"):
         remove(path.join("temp_results/", f))
+
 def gif_load_to_start():
     videoplayer.load("temp_model.gif")
     videoplayer.place(x=1,y=1, width=500, height=500)
@@ -210,7 +220,7 @@ def set_stop_work():
     stop_work = True
 
 def on_closing():
-    clean_dir
+    clean_dir()
     root.destroy()
 
 if __name__ == '__main__':
