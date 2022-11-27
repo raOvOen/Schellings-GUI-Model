@@ -24,7 +24,6 @@ def block_widgets(state):
         entry_frames_per_sec["state"] = tk.DISABLED
         checkbox_use_ROM["state"] = tk.DISABLED
         entry_extra_neighbors_to_be_happy_amount["state"] = tk.DISABLED
-        entry_extra_switch_tries["state"] = tk.DISABLED
         text_box_extra_color_preset["state"] = tk.DISABLED
         entry_extra_pict_size["state"] = tk.DISABLED
     else:
@@ -38,7 +37,6 @@ def block_widgets(state):
         entry_frames_per_sec["state"] = tk.NORMAL
         checkbox_use_ROM["state"] = tk.NORMAL
         entry_extra_neighbors_to_be_happy_amount["state"] = tk.NORMAL
-        entry_extra_switch_tries["state"] = tk.NORMAL
         text_box_extra_color_preset["state"] = tk.NORMAL
         entry_extra_pict_size["state"] = tk.NORMAL
 
@@ -83,11 +81,11 @@ def get_neighbors(cell_index):
     return neighbors_list
 
 def check_if_happy(cell_index, index_list):
-    same_colour_neighbors = 0
+    same_color_neighbors = 0
     for temp_index in get_neighbors(cell_index):
         if(index_list[temp_index] == index_list[cell_index]):
-            same_colour_neighbors +=1
-    if(same_colour_neighbors >= input_extra_neighbors_to_be_happy_amount):
+            same_color_neighbors +=1
+    if(same_color_neighbors >= input_extra_neighbors_to_be_happy_amount):
         return True
     else:
         return False
@@ -112,6 +110,9 @@ def shilling_sim(skip_steps, cur_value_list, cur_green_list, cur_unhappy_set):
                 cur_unhappy_set.discard(cur_cell_to_check)
             else:
                 cur_unhappy_set.add(cur_cell_to_check)
+        if(len(cur_unhappy_set)==0):
+            set_stop_work()
+            break
         progress_bar_task_status["value"] +=1
     progress_bar_task_status.stop()
     return cur_value_list, cur_green_list, cur_unhappy_set
@@ -122,7 +123,6 @@ def start_prog():
     global input_time_length
     global input_skip_steps
     global input_extra_neighbors_to_be_happy_amount
-    global input_extra_switch_tries
     global input_extra_color_preset_dict
     global input_extra_pict_size
     global input_check_save_mp4
@@ -133,7 +133,6 @@ def start_prog():
         input_time_length = int(entry_timeout.get())
         input_skip_steps = int(entry_skip_steps.get())
         input_extra_neighbors_to_be_happy_amount = int(entry_extra_neighbors_to_be_happy_amount.get())
-        input_extra_switch_tries = int(entry_extra_switch_tries.get())
         block_widgets(True)
         input_extra_color_preset_dict = {}
         for key_and_value in text_box_extra_color_preset.get(1.0, tk.END).split('\n')[:-1]:
@@ -219,6 +218,10 @@ def set_stop_work():
     global stop_work
     stop_work = True
 
+def btn_stop_work():
+    set_stop_work()
+    btn_stop["state"] = tk.DISABLED
+
 def on_closing():
     clean_dir()
     root.destroy()
@@ -238,7 +241,7 @@ if __name__ == '__main__':
     btn_start = tk.Button(root, text="Start", command=start_prog)
     btn_start.place(x=506, y=3, width=100, height=30)
 
-    btn_stop = tk.Button(root, text="Stop", command=set_stop_work, state=tk.DISABLED)
+    btn_stop = tk.Button(root, text="Stop", command=btn_stop_work, state=tk.DISABLED)
     btn_stop.place(x=611, y=3, width=100, height=30)
 
     check_save_as_mp4 = tk.BooleanVar()
@@ -274,40 +277,33 @@ if __name__ == '__main__':
     entry_frames_per_sec.place(x=620, y=175, width=88, height=30)
 
     label_extra = tk.Label(root, text="[Extra options]", justify=tk.LEFT)
-    label_extra.place(x=505, y=210, height=30)
+    label_extra.place(x=505, y=225, height=30)
 
     label_extra_neighbors_to_be_happy_amount = tk.Label(root, text="Neighbors amount:", justify=tk.LEFT)
-    label_extra_neighbors_to_be_happy_amount.place(x=505, y=245, height=30)
+    label_extra_neighbors_to_be_happy_amount.place(x=505, y=260, height=30)
 
-    label_extra_switch_tries = tk.Label(root, text="Switch tries:", justify=tk.LEFT)
-    label_extra_switch_tries.place(x=505, y=280, height=30)
+    label_extra_pict_size = tk.Label(root, text="Picture size (dpi):", justify=tk.LEFT)
+    label_extra_pict_size.place(x=505, y=295, height=30)
 
-    label_extra_colour_preset = tk.Label(root, text="Colour preset:", justify=tk.LEFT)
-    label_extra_colour_preset.place(x=505, y=315, height=30)
+    label_extra_color_preset = tk.Label(root, text="Color preset:", justify=tk.LEFT)
+    label_extra_color_preset.place(x=505, y=325, height=30)
 
     entry_extra_neighbors_to_be_happy_amount = tk.Entry(root)
     entry_extra_neighbors_to_be_happy_amount.insert(tk.END,5)
-    entry_extra_neighbors_to_be_happy_amount.place(x=620, y=245, width=88, height=30)
-
-    entry_extra_switch_tries = tk.Entry(root)
-    entry_extra_switch_tries.insert(tk.END, 10000)
-    entry_extra_switch_tries.place(x=620, y=280, width=88, height=30)
-
-    text_box_extra_color_preset = tk.Text(root, state='normal', height=9, width=25)
-    text_box_extra_color_preset.insert(tk.END,"red 0.45\nblue 0.45")
-    text_box_extra_color_preset.place(x=505, y=350)
-
-    label_extra_pict_size = tk.Label(root, text="Picture size:", justify=tk.LEFT)
-    label_extra_pict_size.place(x=505, y=510, height=30)
+    entry_extra_neighbors_to_be_happy_amount.place(x=620, y=260, width=88, height=30)
 
     entry_extra_pict_size = tk.Entry(root)
     entry_extra_pict_size.insert(tk.END, 500)
-    entry_extra_pict_size.place(x=620, y=510, width=88, height=30)
+    entry_extra_pict_size.place(x=620, y=295, width=88, height=30)
+
+    text_box_extra_color_preset = tk.Text(root, state='normal', height=11, width=25)
+    text_box_extra_color_preset.insert(tk.END,"red 0.45\nblue 0.45")
+    text_box_extra_color_preset.place(x=505, y=360)
 
     check_use_ROM = tk.BooleanVar()
     check_use_ROM.set(True) 
     checkbox_use_ROM = tk.Checkbutton(root, text="Use ROM", variable=check_use_ROM, offvalue=False, onvalue=True)
-    checkbox_use_ROM.place(x=610, y=210, width=100, height=30)
+    checkbox_use_ROM.place(x=610, y=225, width=100, height=30)
 
     videoplayer = TkinterVideo(master=root, scaled=True)
     videoplayer.bind("<<Ended>>", gif_ended)
