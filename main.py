@@ -191,8 +191,9 @@ def gif_start_gen():
     block_widgets(False)
 
 def clean_dir():
-    for f in listdir("temp_results/"):
-        remove(path.join("temp_results/", f))
+    if path.isdir("temp_results"):
+        for f in listdir("temp_results/"):
+            remove(path.join("temp_results/", f))
 
 def gif_load_to_start():
     videoplayer.load("temp_model.gif")
